@@ -1,0 +1,18 @@
+{
+  "name": "app3",
+  "version": "1.0.0",
+  "description": "컴퓨터활용능력 실기 기출 파일(.xlsm)을 업로드하면 자동으로 채점하는 정적 웹앱입니다.",
+  "main": "grading.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@xmldom/xmldom": "^0.9.10",
+    "jszip": "^3.10.1",
+    "xlsx": "^0.18.5"
+  }
+}

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>지우쌤 · 컴활 실기 자동채점기</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/webfonts/jetbrains-mono.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">📊 지우쌤</div>
+      <h1>컴활 실기 자동채점기</h1>
+      <p class="sub">내 답안 올리면 바로 채점</p>
+    </header>
+
+    <!-- 1. 급수 선택 -->
+    <section id="step-level" class="card">
+      <h2 class="step-title">급수 선택</h2>
+      <p class="step-desc">채점할 컴활 급수를 선택하세요</p>
+      <div class="level-btns">
+        <button type="button" class="lvbtn" data-level="2급">
+          <span class="lv">컴활 2급</span>
+          <span class="ld">실기 기출 1~10회</span>
+        </button>
+        <button type="button" class="lvbtn" data-level="1급">
+          <span class="lv">컴활 1급</span>
+          <span class="ld">실기 기출 1회</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 2. 회차 선택 -->
+    <section id="step-round" class="card hide">
+      <button type="button" class="back" id="back-to-level">← 급수 다시 선택</button>
+      <h2 class="step-title" id="round-heading">회차 선택</h2>
+      <p class="step-desc">채점할 기출 회차를 선택하세요</p>
+      <div class="rounds" id="rounds"></div>
+    </section>
+
+    <!-- 3. 파일 업로드 -->
+    <section id="step-upload" class="card hide">
+      <button type="button" class="back" id="back-to-round">← 회차 다시 선택</button>
+      <div class="round-tag" id="upload-tag"></div>
+      <div id="drop-zone" class="drop-zone">
+        <div class="drop-big">📂 파일을 끌어다 놓으세요</div>
+        <div class="drop-sm">.xlsm / .xlsx · 시험처럼 저장한 파일 그대로</div>
+        <button type="button" class="file-btn" id="pick-file">파일 선택</button>
+      </div>
+      <input type="file" id="file-input" class="hide" accept=".xlsm,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+      <p class="privacy">🔒 파일은 브라우저에서만 처리되며 외부로 전송되지 않습니다.</p>
+    </section>
+
+    <!-- 4. 결과 -->
+    <section id="step-result" class="hide">
+      <div class="card score-card">
+        <div class="scorebox">
+          <div class="bignum" id="score-num">0<span class="unit">점</span></div>
+          <div id="pass-badge"></div>
+        </div>
+      </div>
+
+      <div class="area-grid" id="area-grid"></div>
+
+      <div class="card">
+        <h3 class="list-title">문제별 결과</h3>
+        <p class="manual-note">👀 표시는 프로그램이 자동으로 확인하기 어려운 항목이라 만점으로 인정했어요. 실제 시험에선 채점 대상입니다.</p>
+        <div id="problem-list"></div>
+      </div>
+
+      <button type="button" class="btn btn-outline" id="retry-btn">다시 채점하기</button>
+    </section>
+
+    <p class="foot">© 지우쌤 · 컴활 실기 자동채점기</p>
+  </div>
+
+  <div id="loading" class="loading hide" aria-live="polite">
+    <div class="spinner"></div>
+    <p>채점 중…</p>
+  </div>
+
+  <div id="toast" class="toast hide" role="alert"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="grading.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>지우쌤 컴활 2급 실기 자동채점기</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{--g:#0d7a35;--g2:#0a5f29;--cream:#f0f1eb;--ink:#1b2420;--mut:#6b7669;--red:#c0392b;--amber:#b8860b;--line:#dfe2d8;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard',sans-serif;background:var(--cream);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:780px;margin:0 auto;padding:24px 16px 80px}
+header{text-align:center;margin-bottom:20px}
+.logo{display:inline-flex;align-items:center;gap:8px;background:var(--g);color:#fff;font-weight:800;font-size:14px;padding:7px 16px;border-radius:999px;letter-spacing:-.3px}
+h1{font-size:24px;font-weight:800;margin:14px 0 4px;letter-spacing:-.5px}
+.sub{color:var(--mut);font-size:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:16px;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.rounds{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.rb{flex:1;min-width:56px;text-align:center;padding:10px 4px;border:1.5px solid var(--line);border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;background:#fff;transition:.12s}
+.rb.on{border-color:var(--g);background:var(--g);color:#fff}
+.rb.dis{opacity:.4;cursor:not-allowed}
+.label{font-weight:700;font-size:13px;color:var(--mut);margin-bottom:8px;letter-spacing:.4px}
+#drop{border:2px dashed var(--g);border-radius:14px;padding:34px 20px;text-align:center;cursor:pointer;transition:.15s;background:#fafbf7}
+#drop.hov{background:#eef5ee;border-color:var(--g2)}
+#drop .big{font-size:17px;font-weight:700;margin-bottom:4px}
+#drop .sm{color:var(--mut);font-size:13px}
+.fname{margin-top:12px;font-size:14px;font-weight:600;color:var(--g);display:none}
+.btn{display:block;width:100%;background:var(--g);color:#fff;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:800;cursor:pointer;margin-top:16px;font-family:inherit;transition:.12s}
+.btn:hover{background:var(--g2)} .btn:disabled{opacity:.4;cursor:not-allowed}
+.scorebox{text-align:center;padding:6px 0 2px}
+.bignum{font-size:56px;font-weight:800;letter-spacing:-2px;line-height:1}
+.bignum small{font-size:22px;color:var(--mut);font-weight:700}
+.badge{display:inline-block;margin-top:10px;padding:8px 26px;border-radius:999px;font-weight:800;font-size:18px}
+.badge.pass{background:#e3f3e7;color:var(--g)} .badge.fail{background:#fbe6e3;color:var(--red)}
+.areahead{display:flex;justify-content:space-between;align-items:baseline;margin-top:18px;padding-bottom:6px;border-bottom:2px solid var(--ink)}
+.areahead .an{font-weight:800;font-size:15px} .areahead .ap{font-weight:800;font-size:14px;color:var(--g)}
+.prow{display:flex;align-items:flex-start;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line)}
+.ico{width:24px;height:24px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;margin-top:1px}
+.ico.ok{background:var(--g)}.ico.no{background:var(--red)}.ico.man{background:var(--mut)}
+.pname{font-weight:700;font-size:14.5px} .pbody{flex:1}
+.pmsg{font-size:12.5px;color:var(--red);margin-top:3px}
+.pans{font-size:12.5px;color:var(--mut);margin-top:3px;background:#f7f8f3;border-radius:6px;padding:6px 9px;border-left:3px solid var(--g)}
+.pans b{color:var(--ink)}
+.ppts{font-weight:800;font-size:14px;white-space:nowrap;text-align:right}
+.ppts small{color:var(--mut);font-weight:600;font-size:11px}
+.ppts.man{color:var(--mut)}
+.note{background:#fff8e8;border:1px solid #f0e0b0;border-radius:10px;padding:12px 14px;font-size:12.5px;color:#7a6420;margin-top:16px;line-height:1.6}
+.foot{text-align:center;color:var(--mut);font-size:12px;margin-top:24px}
+.hide{display:none}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:s .7s linear infinite;vertical-align:-3px;margin-right:6px}
+@keyframes s{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div class="logo">📊 퇴근 30분 줄여주는 · 지우쌤</div>
+<h1>컴활 2급 실기 자동채점기</h1>
+<p class="sub">풀이한 기출 파일(.xlsm)을 올리면 문제별로 채점 + 어디 틀렸는지 알려드려요</p>
+</header>
+
+<div class="card">
+<div class="label">1. 채점할 회차</div>
+<div class="rounds" id="rounds"></div>
+</div>
+
+<div class="card">
+<div class="label">2. 풀이한 파일 올리기</div>
+<div id="drop">
+<div class="big">📂 파일을 끌어다 놓거나 클릭</div>
+<div class="sm">.xlsm / .xlsx · 시험처럼 저장한 파일 그대로</div>
+</div>
+<div class="fname" id="fname"></div>
+<input type="file" id="file" class="hide" accept=".xlsm,.xlsx">
+<button class="btn" id="go" disabled>채점하기</button>
+</div>
+
+<div class="card hide" id="result">
+<div class="scorebox">
+<div class="bignum" id="score">0<small>점</small></div>
+<div id="badge"></div>
+</div>
+<div id="areas" style="margin-top:8px"></div>
+<div class="note" id="note"></div>
+</div>
+
+<p class="foot">© 지우쌤 · 컴활 2급 실기 자동채점기 v2</p>
+</div>
+
+<script>
+// 컴활 자동채점 엔진 (브라우저 & Node 공용)
+// 의존성은 인자로 주입: XLSX, JSZip, DOMParser
+async function gradeWorkbook(buf, deps, KEY){
+  const {XLSX, JSZip, DOMParser} = deps;
+  const wb = XLSX.read(buf, {type:'array', cellFormula:true, cellDates:true});
+  const zip = await JSZip.loadAsync(buf);
+  const files = {};
+  for(const nm of Object.keys(zip.files)){
+    if(/\.(xml|rels)$/.test(nm)) files[nm] = await zip.files[nm].async('string');
+  }
+  const parse = s => new DOMParser().parseFromString(s, 'application/xml');
+  const tag = (el,t)=>[...el.getElementsByTagName(t)];
+
+  // ---- 시트 이름 -> sheetN.xml 경로 매핑 ----
+  const wbx = parse(files['xl/workbook.xml']);
+  const rels = parse(files['xl/_rels/workbook.xml.rels']);
+  const ridToTarget = {};
+  tag(rels,'Relationship').forEach(r=>ridToTarget[r.getAttribute('Id')]=r.getAttribute('Target'));
+  const sheetPath = {};
+  tag(wbx,'sheet').forEach(s=>{
+    const nm=s.getAttribute('name');
+    const rid=s.getAttribute('r:id')||s.getAttribute('relationship:id')||
+      [...s.attributes].find(a=>a.name.endsWith(':id'))?.value;
+    let tgt=ridToTarget[rid]; if(tgt && !tgt.startsWith('xl/')) tgt='xl/'+tgt;
+    sheetPath[nm]=tgt;
+  });
+  const sheetDoc = nm => { const p=sheetPath[nm]; return p&&files[p]?parse(files[p]):null; };
+
+  // ---- styles.xml ----
+  const styles = files['xl/styles.xml'] ? parse(files['xl/styles.xml']) : null;
+  let fonts=[],fills=[],borders=[],cellXfs=[];
+  if(styles){
+    const fEl=tag(styles,'fonts')[0]; if(fEl) fonts=tag(fEl,'font');
+    const flEl=tag(styles,'fills')[0]; if(flEl) fills=tag(flEl,'fill');
+    const bEl=tag(styles,'borders')[0]; if(bEl) borders=tag(bEl,'border');
+    const xEl=tag(styles,'cellXfs')[0]; if(xEl) cellXfs=tag(xEl,'xf');
+  }
+  function cellStyleIdx(sheetName,coord){
+    const d=sheetDoc(sheetName); if(!d) return null;
+    const c=tag(d,'c').find(x=>x.getAttribute('r')===coord);
+    if(!c) return {missing:true};
+    return {s:parseInt(c.getAttribute('s')||'0'), cEl:c, doc:d};
+  }
+  function styleOf(sheetName,coord){
+    const info=cellStyleIdx(sheetName,coord);
+    if(!info||info.missing) return null;
+    const xf=cellXfs[info.s]; if(!xf) return {};
+    const out={};
+    // fill
+    const fillId=parseInt(xf.getAttribute('fillId')||'0');
+    if(fills[fillId]){
+      const fg=tag(fills[fillId],'fgColor')[0];
+      if(fg&&fg.getAttribute('rgb')) out.fill=fg.getAttribute('rgb').slice(-6).toUpperCase();
+    }
+    // font
+    const fontId=parseInt(xf.getAttribute('fontId')||'0');
+    if(fonts[fontId]){
+      const f=fonts[fontId];
+      const nm=tag(f,'name')[0]||tag(f,'rFont')[0];
+      out.font=nm?nm.getAttribute('val'):null;
+      const sz=tag(f,'sz')[0]; out.size=sz?parseFloat(sz.getAttribute('val')):null;
+      out.bold=tag(f,'b').length>0;
+    }
+    // border
+    const borderId=parseInt(xf.getAttribute('borderId')||'0');
+    if(borders[borderId]){
+      const b=borders[borderId];const get=t=>{const e=tag(b,t)[0];return e?e.getAttribute('style'):null;};
+      out.border={left:get('left'),right:get('right'),top:get('top'),bottom:get('bottom')};
+    }
+    // alignment
+    const al=tag(xf,'alignment')[0];
+    out.align=al?al.getAttribute('horizontal'):null;
+    return out;
+  }
+
+  // ---- comments ----
+  function relsOf(sheetName){
+    const p=sheetPath[sheetName]; if(!p) return null;
+    const base=p.split('/').pop();
+    const relPath='xl/worksheets/_rels/'+base+'.rels';
+    return files[relPath]?parse(files[relPath]):null;
+  }
+  function commentAt(sheetName,coord){
+    // 해당 시트에 연결된 comments 파일만 확인 (전역 검색 금지)
+    const rd=relsOf(sheetName); if(!rd) return null;
+    let cpath=null;
+    tag(rd,'Relationship').forEach(r=>{if(/comment/i.test(r.getAttribute('Target'))){cpath=r.getAttribute('Target').replace('../','xl/');}});
+    if(!cpath||!files[cpath]) return null;
+    const cd=parse(files[cpath]);
+    const cm=tag(cd,'comment').find(x=>x.getAttribute('ref')===coord);
+    return cm?tag(cm,'t').map(t=>t.textContent).join(''):null;
+  }
+  function chartsForSheet(sheetName){
+    const rd=relsOf(sheetName); if(!rd) return [];
+    const drawings=[];
+    tag(rd,'Relationship').forEach(r=>{const t=r.getAttribute('Target');if(/drawing\d+\.xml$/.test(t)) drawings.push(t.replace('../','xl/'));});
+    const want=new Set();
+    drawings.forEach(dp=>{
+      const drel='xl/drawings/_rels/'+dp.split('/').pop()+'.rels';
+      if(files[drel]){const dd=parse(files[drel]);tag(dd,'Relationship').forEach(r=>{const t=r.getAttribute('Target');if(/chart\d+\.xml$/.test(t)) want.add(t.replace('../','xl/'));});}
+    });
+    return charts.filter(c=>want.has(c.file));
+  }
+  function rangeCells(rng){
+    const m=rng.match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/); if(!m) return [rng];
+    const col=s=>{let n=0;for(const ch of s)n=n*26+(ch.charCodeAt(0)-64);return n;};
+    const colL=n=>{let s='';while(n>0){s=String.fromCharCode(65+(n-1)%26)+s;n=Math.floor((n-1)/26);}return s;};
+    const c1=col(m[1]),r1=+m[2],c2=col(m[3]),r2=+m[4];const out=[];
+    for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)out.push(colL(c)+r);
+    return out;
+  }
+
+  // ---- defined names ----
+  function definedName(name){
+    const dn=tag(wbx,'definedName').find(d=>d.getAttribute('name')===name);
+    return dn?dn.textContent:null;
+  }
+
+  // ---- conditional formatting ----
+  function cfRules(sheetName){
+    const d=sheetDoc(sheetName); if(!d) return [];
+    return tag(d,'conditionalFormatting').map(cf=>({
+      sqref:cf.getAttribute('sqref'),
+      formulas:tag(cf,'formula').map(f=>f.textContent),
+      type:(tag(cf,'cfRule')[0]||{}).getAttribute?tag(cf,'cfRule')[0].getAttribute('type'):null
+    }));
+  }
+
+  // ---- charts ----
+  const C='http://schemas.openxmlformats.org/drawingml/2006/chart';
+  const A='http://schemas.openxmlformats.org/drawingml/2006/main';
+  function parseCharts(){
+    const out=[];
+    for(const nm of Object.keys(files)){
+      if(!/xl\/charts\/chart\d+\.xml$/.test(nm)) continue;
+      const d=parse(files[nm]);
+      const gt=(p,t)=>[...d.getElementsByTagNameNS(p,t)];
+      let type=null,barDir=null;
+      for(const t of ['barChart','lineChart','pieChart','areaChart']){
+        if(gt(C,t).length){type=t;const bd=gt(C,'barDir')[0];barDir=bd?bd.getAttribute('val'):null;break;}
+      }
+      const title=gt(C,'title').length?gt(C,'title')[0].getElementsByTagNameNS(A,'t').length?
+        [...gt(C,'title')[0].getElementsByTagNameNS(A,'t')].map(x=>x.textContent).join(''):'':'';
+      const sers=gt(C,'ser').map(s=>{
+        const txEl=s.getElementsByTagNameNS(C,'tx')[0];
+        const nm2=txEl?([...txEl.getElementsByTagNameNS(C,'v')].map(x=>x.textContent).join('')||
+                  [...txEl.getElementsByTagNameNS(A,'t')].map(x=>x.textContent).join('')):'';
+        return {name:nm2, dLbls:s.getElementsByTagNameNS(C,'dLbls').length>0};
+      });
+      const axisTitles=[...gt(C,'valAx'),...gt(C,'catAx')].map(ax=>
+        [...ax.getElementsByTagNameNS(A,'t')].map(x=>x.textContent).join('')).filter(Boolean);
+      const rounded=gt(C,'roundedCorners')[0];
+      out.push({file:nm,type,barDir,title,series:sers,axisTitles,
+        legend:gt(C,'legend').length>0,
+        rounded:rounded?rounded.getAttribute('val')!=='0':false,
+        hasShadow:files[nm].includes('outerShdw'),
+        hasLine:files[nm].includes('<c:spPr')&&files[nm].includes('<a:ln')});
+    }
+    return out;
+  }
+  const charts=parseCharts();
+
+  // ===== helpers =====
+  const normS=v=>String(v).trim().replace(/\s+/g,' ');
+  const isEmpty=x=>x==null||normS(x)==='';
+  function cellVal(sheetName,coord){const sh=wb.Sheets[sheetName];const c=sh?sh[coord]:null;return c?c.v:null;}
+  function cellFormula(sheetName,coord){const sh=wb.Sheets[sheetName];const c=sh?sh[coord]:null;return c&&c.f?c.f:'';}
+  function valEq(s,e,isDate){
+    if(isEmpty(e))return isEmpty(s);
+    if(s==null)return false;
+    if(isDate){let x=s instanceof Date?s.toISOString().slice(0,10):normS(s);return x===e||x.slice(0,10)===e;}
+    if(typeof e==='number'){const n=typeof s==='number'?s:parseFloat(String(s).replace(/,/g,''));return !isNaN(n)&&Math.abs(n-e)<0.5;}
+    return normS(s)===normS(e);
+  }
+
+  // ===== grade each problem =====
+  const results=[];
+  for(const p of KEY.problems){
+    let ok=true, msg='', manual=false;
+    if(p.type==='input'||p.type==='sort'||p.type==='macro_value'){
+      const wrong=p.cells.filter(c=>!valEq(cellVal(p.sheet,c.coord),c.value,c.is_date)).map(c=>c.coord);
+      if(wrong.length){ok=false;msg=`셀 ${wrong.slice(0,6).join(', ')}${wrong.length>6?' 외':''} 불일치`;}
+    }
+    else if(p.type==='formula_group'){
+      const bad=[];
+      for(const c of p.cells){
+        const v=cellVal(p.sheet,c.coord), f=cellFormula(p.sheet,c.coord).toUpperCase().replace(/_XLFN\./g,'');
+        const vOk=valEq(v,c.value,c.is_date);
+        const fOk=p.req_funcs.every(fn=>f.includes(fn));
+        if(!vOk||!fOk) bad.push(c.coord+(!fOk?'(함수)':'(값)'));
+      }
+      if(bad.length){ok=false;msg=`${bad.slice(0,4).join(', ')} — 지정 함수(${p.req_funcs.join(',')}) 미사용 또는 결과 불일치`;}
+    }
+    else if(p.type==='fmt_align'){
+      const bad=p.checks.filter(c=>{const st=styleOf(p.sheet,c.coord);return !st||st.align!==c.align;}).map(c=>c.coord);
+      if(bad.length){ok=false;msg=`맞춤 미적용: ${bad.join(', ')}`;}
+    }
+    else if(p.type==='fmt_fillfont'){
+      const st=styleOf(p.sheet,p.range.split(':')[0]);
+      if(!st){ok=false;msg='서식 없음';}
+      else{
+        const errs=[];
+        if((st.fill||'')!==p.fill) errs.push(`음영색(${st.fill||'없음'})`);
+        if(st.font!==p.font) errs.push(`글꼴(${st.font||'없음'})`);
+        if(st.size!==p.size) errs.push(`크기(${st.size||'없음'})`);
+        if(!st.bold) errs.push('굵게');
+        if(errs.length){ok=false;msg=errs.join(', ')+' 불일치';}
+      }
+    }
+    else if(p.type==='fmt_border'){
+      const [c1,c2]=p.range.split(':');
+      const tl=styleOf(p.sheet,c1), br=styleOf(p.sheet,c2);
+      const thick=s=>s==='medium'||s==='thick';
+      const inner=styleOf(p.sheet,'D6');
+      if(!tl||!br||!thick(tl.border?.left)||!thick(tl.border?.top)||!thick(br.border?.right)||!thick(br.border?.bottom)){
+        ok=false;msg='굵은 바깥쪽 테두리 미적용';
+      } else if(!inner||!inner.border?.left){ok=false;msg='모든 테두리(안쪽) 미적용';}
+    }
+    else if(p.type==='defined_name'){
+      const ref=definedName(p.name);
+      const norm=ref?ref.replace(/\$/g,'').replace(/'/g,''):'';
+      if(!ref||!norm.includes(p.ref_contains)){ok=false;msg=`이름 '${p.name}' 미정의 또는 범위 불일치`;}
+    }
+    else if(p.type==='comment'){
+      const t=commentAt(p.sheet,p.coord);
+      if(!t){ok=false;msg=`[${p.coord}] 메모 없음`;}
+      else if(!t.includes('매출액')){ok=false;msg=`메모 내용 불일치(${t.slice(0,15)})`;}
+    }
+    else if(p.type==='macro_fill'){
+      const bad=rangeCells(p.range).filter(cd=>{const st=styleOf(p.sheet,cd);return !st||(st.fill||'')!==p.fill;});
+      if(bad.length){ok=false;msg=`[${p.range}] 음영색(${p.fill}) 미적용`;}
+    }
+    else if(p.type==='cond_format'){
+      const rules=cfRules(p.sheet);
+      const hit=rules.find(r=>r.formulas.some(f=>p.req_funcs.every(fn=>f.toUpperCase().includes(fn))));
+      if(!hit){ok=false;msg=`조건부서식 규칙 없음 또는 함수(${p.req_funcs.join(',')}) 미사용`;}
+    }
+    else if(p.type==='scenario'){
+      const all=new Set();
+      wb.SheetNames.forEach(n=>{const s=wb.Sheets[n];Object.keys(s).forEach(k=>{if(k[0]!=='!'&&typeof s[k].v==='number')all.add(Math.round(s[k].v));});});
+      const found=p.result_values.filter(v=>all.has(Math.round(v))).length;
+      const hasSummary=wb.SheetNames.some(n=>n.includes('시나리오'));
+      if(!hasSummary||found<p.result_values.length){ok=false;msg=`시나리오 요약 시트/결과값 불일치 (결과 ${found}/${p.result_values.length})`;}
+    }
+    else if(p.type==='chart_series'){
+      const cs=chartsForSheet(p.sheet);
+      const good=cs.some(c=>{const names=c.series.map(s=>s.name);
+        return p.include.every(i=>names.includes(i)) && !p.exclude.some(e=>names.includes(e));});
+      if(!good){ok=false;msg=`'${p.exclude.join(',')}' 계열이 제거되지 않음`;}
+    }
+    else if(p.type==='chart_type'){
+      if(!chartsForSheet(p.sheet).some(c=>c.barDir===p.barDir)){ok=false;msg=`'묶은 가로 막대형'(barDir=bar) 아님`;}
+    }
+    else if(p.type==='chart_titles'){
+      const cs=chartsForSheet(p.sheet);const c=cs.find(c=>c.title&&c.title.length)||cs[0];
+      if(!c||!c.title){ok=false;msg='차트 제목 없음';}
+      else if(c.axisTitles.length<2){ok=false;msg=`축 제목 부족 (${c.axisTitles.length}/2)`;}
+    }
+    else if(p.type==='chart_dlbl'){
+      const c=chartsForSheet(p.sheet).find(c=>c.series.some(s=>s.name===p.series&&s.dLbls));
+      if(!c){ok=false;msg=`'${p.series}' 계열 데이터 레이블 없음`;}
+    }
+    else if(p.type==='chart_style'){
+      manual=true; msg='차트 영역 윤곽선/둥근모서리/그림자 — 수동 확인 필요';
+    }
+    results.push({id:p.id,area:p.area,points:p.points,ok,earned:(manual?0:(ok?p.points:0)),msg,answer:p.answer,type:p.type,manual});
+  }
+  const total=results.reduce((s,r)=>s+r.earned,0);
+  const manualPts=results.filter(r=>r.manual).reduce((s,r)=>s+r.points,0);
+  const autoMax=100-manualPts;
+  return {total,autoMax,manualPts,pass:total>=KEY.pass,results,charts};
+}
+if(typeof module!=='undefined') module.exports={gradeWorkbook};
+
+const KEY_1 = {"round":1,"level":"2급","title":"컴활 2급 실기 최신기출 1회","pass":70,"problems":[{"id":"기본작업-1","area":"기본작업","points":5,"type":"input","sheet":"기본작업-1","cells":[{"coord":"A3","value":"상품코드"},{"coord":"B3","value":"판매자"},{"coord":"C3","value":"품목명"},{"coord":"D3","value":"거래 일자"},{"coord":"E3","value":"연락처"},{"coord":"F3","value":"입고량"},{"coord":"G3","value":"재고량"},{"coord":"A4","value":"JK-0531"},{"coord":"B4","value":"Jackson"},{"coord":"C4","value":"원목 의자"},{"coord":"D4","value":"2021-08-02","is_date":true},{"coord":"E4","value":"010-3297-8781"},{"coord":"F4","value":8432},{"coord":"G4","value":7098},{"coord":"A5","value":"QK-4242"},{"coord":"B5","value":"Jane"},{"coord":"C5","value":"모니터 받침대"},{"coord":"D5","value":"2020-02-04","is_date":true},{"coord":"E5","value":"010-8781-9785"},{"coord":"F5","value":6898},{"coord":"G5","value":6087},{"coord":"A6","value":"CE-1423"},{"coord":"B6","value":"Liam"},{"coord":"C6","value":"높이 조절 전동 책상"},{"coord":"D6","value":"2021-07-03","is_date":true},{"coord":"E6","value":"010-7818-9781"},{"coord":"F6","value":9878},{"coord":"G6","value":5785},{"coord":"A7","value":"QE-4213"},{"coord":"B7","value":"Noah"},{"coord":"C7","value":"원목 테이블"},{"coord":"D7","value":"2020-09-01","is_date":true},{"coord":"E7","value":"010-8782-9871"},{"coord":"F7","value":7879},{"coord":"G7","value":6087},{"coord":"A8","value":"JK-0531"},{"coord":"B8","value":"Lucas"},{"coord":"C8","value":"모니터 암"},{"coord":"D8","value":"2021-08-04","is_date":true},{"coord":"E8","value":"010-9828-9985"},{"coord":"F8","value":8782},{"coord":"G8","value":7878},{"coord":"A9","value":"QE-4213"},{"coord":"B9","value":"Logan"},{"coord":"C9","value":"원형 옷걸이"},{"coord":"D9","value":"2021-05-06","is_date":true},{"coord":"E9","value":"010-3052-4872"},{"coord":"F9","value":3578},{"coord":"G9","value":1987}],"answer":"표의 모든 데이터를 주어진 대로 정확히 입력 (한 셀이라도 다르면 0점)"},{"id":"기본작업-2 ① 맞춤","area":"기본작업","points":2,"type":"fmt_align","sheet":"기본작업-2","checks":[{"coord":"A2","align":"centerContinuous"},{"coord":"A3","align":"center"},{"coord":"A4","align":"center"},{"coord":"D4","align":"center"},{"coord":"G4","align":"center"}],"answer":"[A2:H2] 선택영역에서 가운데로 / [A3:H3],[A4:B10],[D4:E10],[G4:H10] 가로 가운데 맞춤"},{"id":"기본작업-2 ② 음영/글꼴","area":"기본작업","points":2,"type":"fmt_fillfont","sheet":"기본작업-2","range":"A3:H3","fill":"00B0F0","font":"돋움","size":12,"bold":true,"answer":"[A3:H3] 음영색 연한 파랑(00B0F0), 글꼴 돋움·굵게·12pt"},{"id":"기본작업-2 ③ 테두리","area":"기본작업","points":2,"type":"fmt_border","sheet":"기본작업-2","range":"A3:H10","answer":"[A3:H10] 모든 테두리 + 굵은 바깥쪽 테두리"},{"id":"기본작업-2 ④ 이름정의","area":"기본작업","points":2,"type":"defined_name","name":"브랜드","ref_contains":"E4:E10","answer":"[E4:E10] 영역 이름을 '브랜드'로 정의"},{"id":"기본작업-2 ⑤ 메모","area":"기본작업","points":2,"type":"comment","sheet":"기본작업-2","coord":"G8","text":"최고 매출액 상품","answer":"[G8]에 메모 '최고 매출액 상품' 삽입(항상 표시·자동 크기)"},{"id":"기본작업-3 조건부서식","area":"기본작업","points":5,"type":"cond_format","sheet":"기본작업-3","range":"A3:F12","req_funcs":["RIGHT","AND"],"answer":"=AND(RIGHT($A3,4)=\"에르메스\",$E3=\"44mm\")  (굵게·파랑 음영, 수식규칙 1개)"},{"id":"계산작업 1번","area":"계산작업","points":8,"type":"formula_group","sheet":"계산작업","cells":[{"coord":"B13","value":20870000}],"req_funcs":["DAVERAGE","ROUNDDOWN"],"answer":"=ROUNDDOWN(DAVERAGE(A2:D10,B2,A12:A13),-4)"},{"id":"계산작업 2번","area":"계산작업","points":8,"type":"formula_group","sheet":"계산작업","cells":[{"coord":"I12","value":"2명"}],"req_funcs":["AVERAGE","COUNTIFS"],"answer":"=COUNTIFS(H3:H8,\">3000000\",I3:I8,\">=\"&AVERAGE(I3:I8))&\"명\""},{"id":"계산작업 3번","area":"계산작업","points":8,"type":"formula_group","sheet":"계산작업","cells":[{"coord":"D17","value":"영업부"},{"coord":"D18","value":"생산부"},{"coord":"D19","value":"생산부"},{"coord":"D20","value":"총무부"},{"coord":"D21","value":"영업부"},{"coord":"D22","value":"생산부"},{"coord":"D23","value":"총무부"}],"req_funcs":["CHOOSE","MID"],"answer":"=CHOOSE(MID(A17,1,1),\"영업부\",\"생산부\",\"총무부\")"},{"id":"계산작업 4번","area":"계산작업","points":8,"type":"formula_group","sheet":"계산작업","cells":[{"coord":"I17","value":""},{"coord":"I18","value":""},{"coord":"I19","value":""},{"coord":"I20","value":"1위"},{"coord":"I21","value":""},{"coord":"I22","value":""},{"coord":"I23","value":"2위"}],"req_funcs":["IF","LARGE"],"answer":"=IF(LARGE($H$17:$H$23,1)=H17,\"1위\",IF(LARGE($H$17:$H$23,2)=H17,\"2위\",\"\"))"},{"id":"계산작업 5번","area":"계산작업","points":8,"type":"formula_group","sheet":"계산작업","cells":[{"coord":"D28","value":"서울"},{"coord":"D29","value":"부산"},{"coord":"D30","value":"인천 "},{"coord":"D31","value":"서울"},{"coord":"D32","value":"코드오류"},{"coord":"D33","value":"인천 "}],"req_funcs":["IFERROR","HLOOKUP","LEFT"],"answer":"=IFERROR(HLOOKUP(LEFT(A28,1),$B$35:$D$36,2,FALSE),\"코드오류\")"},{"id":"분석작업-1 시나리오","area":"분석작업","points":10,"type":"scenario","result_values":[1040080,910070,585045],"changing":[80,70,45],"names":["비율인상","비율인하"],"answer":"시나리오 '비율인상'(집행률계 70), '비율인하'(45) → 집행액합계 결과 요약 시트 생성"},{"id":"분석작업-2 정렬","area":"분석작업","points":10,"type":"sort","sheet":"분석작업-2","cells":[{"coord":"B5","value":"박성천"},{"coord":"C5","value":43},{"coord":"D5","value":"중구"},{"coord":"E5","value":"A급"},{"coord":"F5","value":"회장"},{"coord":"A6","value":2015},{"coord":"B6","value":"이익준"},{"coord":"C6","value":33},{"coord":"E6","value":"B급"},{"coord":"A7","value":2015},{"coord":"B7","value":"김혁수"},{"coord":"C7","value":26},{"coord":"D7","value":"마포구"},{"coord":"E7","value":"C급"},{"coord":"A8","value":2016},{"coord":"B8","value":"이상혁"},{"coord":"C8","value":30},{"coord":"D8","value":"강동구"},{"coord":"E8","value":"B급"},{"coord":"A9","value":2016},{"coord":"B9","value":"박기수"},{"coord":"C9","value":34},{"coord":"D9","value":"강남구"},{"coord":"E9","value":"A급"},{"coord":"A10","value":2016},{"coord":"B10","value":"이병훈"},{"coord":"C10","value":32},{"coord":"D10","value":"강동구"},{"coord":"F10","value":"총무"},{"coord":"B11","value":"이진용"},{"coord":"C11","value":28},{"coord":"D11","value":"용산구"},{"coord":"E11","value":"B급"},{"coord":"B12","value":"최민규"},{"coord":"C12","value":31},{"coord":"D12","value":"은평구"},{"coord":"E12","value":"C급"},{"coord":"A13","value":2016},{"coord":"B13","value":"김희준"},{"coord":"C13","value":26},{"coord":"E13","value":"A급"},{"coord":"A14","value":2017},{"coord":"B14","value":"최은우"},{"coord":"C14","value":41},{"coord":"D14","value":"송파구"},{"coord":"E14","value":"C급"},{"coord":"A15","value":2017},{"coord":"B15","value":"박은규"},{"coord":"C15","value":27},{"coord":"D15","value":"용산구"},{"coord":"E15","value":"B급"},{"coord":"B16","value":"백은석"},{"coord":"C16","value":26},{"coord":"E16","value":"A급"}],"answer":"가입연도 2015→2016→2017 순, 동일연도는 거주지역 셀색 RGB(219,219,219)이 위로 정렬"},{"id":"매크로작업 ① 합계","area":"기타작업","points":5,"type":"macro_value","sheet":"매크로작업","cells":[{"coord":"F4","value":72},{"coord":"F5","value":66},{"coord":"F6","value":76},{"coord":"F7","value":84},{"coord":"F8","value":82},{"coord":"F9","value":75},{"coord":"F10","value":65}],"answer":"매크로 '합계': [F4:F10]에 SUM 결과, 단추 [B12:C13] 연결"},{"id":"매크로작업 ② 서식","area":"기타작업","points":5,"type":"macro_fill","sheet":"매크로작업","range":"A3:F3","fill":"92D050","answer":"매크로 '서식': [A3:F3] 음영색 연한 녹색(92D050), 빗면 도형 [D12:E13] 연결"},{"id":"차트작업 ① 비용 제거","area":"기타작업","points":2,"type":"chart_series","include":["매출","순수익"],"exclude":["비용"],"answer":"'비용' 계열 제거 (매출·순수익만 남김)","sheet":"차트작업"},{"id":"차트작업 ② 가로 막대형","area":"기타작업","points":2,"type":"chart_type","barDir":"bar","answer":"차트 종류를 '묶은 가로 막대형'으로 변경","sheet":"차트작업"},{"id":"차트작업 ③ 제목·축제목","area":"기타작업","points":2,"type":"chart_titles","title":"사원별 매출과 수익","answer":"차트 제목 '차트 위' + 세로/가로 축제목 추가","sheet":"차트작업"},{"id":"차트작업 ④ 데이터 레이블","area":"기타작업","points":2,"type":"chart_dlbl","series":"매출","answer":"'매출' 요소에만 데이터 레이블 '값', 위치 '바깥쪽 끝에'","sheet":"차트작업"},{"id":"차트작업 ⑤ 테두리·그림자","area":"기타작업","points":2,"type":"chart_style","answer":"차트 영역 윤곽선 '파랑-강조1', 둥근 모서리, '오프셋 아래쪽' 그림자","sheet":"차트작업"}]};
+const KEYS = {1: KEY_1};
+let curRound=1, fileBuf=null;
+
+const rEl=document.getElementById('rounds');
+for(let i=1;i<=10;i++){
+ const b=document.createElement('div');
+ b.className='rb'+(i===1?' on':' dis');
+ b.textContent=i+'회';
+ if(i===1) b.onclick=()=>{curRound=1;};
+ rEl.appendChild(b);
+}
+
+const drop=document.getElementById('drop'),fileIn=document.getElementById('file'),
+ fnameEl=document.getElementById('fname'),goBtn=document.getElementById('go');
+drop.onclick=()=>fileIn.click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('hov');};
+drop.ondragleave=()=>drop.classList.remove('hov');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('hov');if(e.dataTransfer.files[0])pick(e.dataTransfer.files[0]);};
+fileIn.onchange=e=>{if(e.target.files[0])pick(e.target.files[0]);};
+async function pick(f){fnameEl.textContent='📄 '+f.name;fnameEl.style.display='block';fileBuf=new Uint8Array(await f.arrayBuffer());goBtn.disabled=false;}
+
+goBtn.onclick=async()=>{
+ if(!fileBuf)return;
+ goBtn.innerHTML='<span class="spin"></span>채점 중...';goBtn.disabled=true;
+ try{
+  const r=await gradeWorkbook(fileBuf,{XLSX,JSZip,DOMParser},KEYS[curRound]);
+  render(r);
+ }catch(e){alert('채점 중 오류: '+e.message);console.error(e);}
+ goBtn.innerHTML='채점하기';goBtn.disabled=false;
+};
+
+const AREAS=['기본작업','계산작업','분석작업','기타작업'];
+function render(r){
+ document.getElementById('score').innerHTML=r.total+'<small>점</small>';
+ const pass=r.pass;
+ document.getElementById('badge').innerHTML='<span class="badge '+(pass?'pass':'fail')+'">'+(pass?'합격 예상 🎉':'불합격 (70점 미만)')+'</span>';
+ const host=document.getElementById('areas');host.innerHTML='';
+ AREAS.forEach(area=>{
+  const rows=r.results.filter(x=>x.area===area);
+  if(!rows.length)return;
+  const earned=rows.reduce((s,x)=>s+x.earned,0);
+  const max=rows.reduce((s,x)=>s+x.points,0);
+  const h=document.createElement('div');h.className='areahead';
+  h.innerHTML='<span class="an">'+area+'</span><span class="ap">'+earned+' / '+max+'점</span>';
+  host.appendChild(h);
+  rows.forEach(x=>{
+   const row=document.createElement('div');row.className='prow';
+   const cls=x.manual?'man':(x.ok?'ok':'no');
+   const sym=x.manual?'?':(x.ok?'✓':'✕');
+   let body='<div class="pname">'+x.id+'</div>';
+   if(x.manual){body+='<div class="pans">'+x.msg+'</div>';}
+   else if(!x.ok){
+     body+='<div class="pmsg">✗ '+x.msg+'</div>';
+     body+='<div class="pans"><b>정답:</b> '+x.answer+'</div>';
+   }
+   const pts='<div class="ppts '+(x.manual?'man':'')+'">'+(x.manual?'수동':x.earned)+'<small>/'+x.points+'</small></div>';
+   row.innerHTML='<div class="ico '+cls+'">'+sym+'</div><div class="pbody">'+body+'</div>'+pts;
+   host.appendChild(row);
+  });
+ });
+ document.getElementById('note').innerHTML=
+  '⚠️ 자동채점 안내<br>'+
+  '· <b>계산작업</b>은 지정 함수 사용 + 결과값을 함께 확인해요 (시험 채점 기준과 동일).<br>'+
+  '· <b>차트 ⑤(윤곽선·둥근모서리·그림자)</b>는 자동 판별이 어려워 <b>수동 확인</b>으로 표시돼요. 맞았으면 +2점.<br>'+
+  '· 서식·맞춤은 엑셀로 저장한 파일 기준이에요.';
+ document.getElementById('result').classList.remove('hide');
+ document.getElementById('result').scrollIntoView({behavior:'smooth'});
+}
+</script>
+</body>
+</html>
