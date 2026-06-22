@@ -4,11 +4,13 @@
 
 ## 로컬 테스트
 
+프로젝트 루트(`자동채점앱/`)에서 실행:
+
 ```bash
-npx serve .
+python3 -m http.server 8765
 ```
 
-브라우저에서 `http://localhost:3000` 접속 (`file://`로는 정답키 fetch가 동작하지 않습니다).
+브라우저에서 `http://localhost:8765` 접속 (`file://`로는 정답키 fetch가 동작하지 않습니다).
 
 ## GitHub Pages 배포
 
